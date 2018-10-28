@@ -7,6 +7,7 @@ Created on Thu Oct 18 19:18:02 2018
 """
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 tank1Color = 'b'
 tank2Color = 'r'
@@ -44,6 +45,14 @@ def trajectory (x0,y0,v,theta,g = 9.8, npts = 1000):
     0.5g t^2 - vsin(theta) t - y0 = 0
     t_final = v/g sin(theta) + sqrt((v/g)^2 sin^2(theta) + 2 y0/g)
     """
+    
+    vx=v*math.cos(math.radians(theta))
+    vy=v*math.sin(math.radians(theta))
+    tfinal=((vy/g)+math.sqrt(((vy/g)**2)-(2*(y0/g))))
+    t=np.linspace(0,tfinal,npts)
+    x=x0+(vx*t)
+    y=y0+(vy*t)-(0.5*g*(t**2))
+    return(x,y)
   
 
 def firstInBox (x,y,box):
@@ -96,8 +105,15 @@ def tankShot (targetBox, obstacleBox, x0, y0, v, theta, g = 9.8):
     obstacle box
     draws the truncated trajectory in current plot window
     """
+    x,y=trajectory(x0,y0,v,theta)
+    x,y=endTrajectoryAtIntersection(x,y,obstacleBox)
+    plt.plot(x,y)
+    x=firstInBox(x,y,targetbox)
+    if x==-1:
+        return 0
+    else:
+        return 1
     
-
 
 def drawBoard (tank1box, tank2box, obstacleBox, playerNum):
     """
@@ -114,7 +130,12 @@ def drawBoard (tank1box, tank2box, obstacleBox, playerNum):
         1 or 2 -- who's turn it is to shoot
  
     """    
-    #your code here
+    plt.clf()
+    drawBox(tank1box,"r")
+    drawBox(tank2box,"b")
+    drawBox(obstacleBox,"y")
+    plt.xlim(0,100)
+    plt.ylim(0,100)
     
     showWindow() #this makes the figure window show up
 
@@ -143,8 +164,22 @@ def oneTurn (tank1box, tank2box, obstacleBox, playerNum, g = 9.8):
     displays trajectory (shot originates from center of tank)
     returns 0 for miss, 1 or 2 for victory
     """        
-
-    
+    drawBoard(tank1box,tank2box,obstacleBox,playerNum)
+    vel=getNumberInput("Player"+str(playerNum)+", please enter velocity: ",[0,1000])
+    ang=getNumberInput("Player"+str(playerNum)+", please enter angle: ",[0,180])
+    if playerNum==1:
+        origin=tank1box
+        target=tank2box
+    else:
+        origin=tank2box
+        target=tank1box
+    x0=(origin[0]+origin[1])/2
+    y0=(origin[2]+origin[3])/2
+    x=tankShot(target,obstacleBox,x0,y0,vel,ang)
+    if x==1:
+        return playerNum
+    else:
+        return 0
 
 def playGame(tank1box, tank2box, obstacleBox, g = 9.8):
     """
@@ -162,7 +197,17 @@ def playGame(tank1box, tank2box, obstacleBox, g = 9.8):
         accel due to gravity (default 9.8)
     """
     
-    
+    playerNum=1
+    x=0
+    while x==0:
+        x=oneTurn(tank1box,tank2box,obstacleBox,playerNum)
+        input("Press enter to continue")
+        if playerNum==1:
+            playerNum=2
+        else:
+            PlayerNum=1
+    print("Player",x,"wins! Congratulations!")
+        
         
 ##### functions provided to you #####
 def getNumberInput (prompt, validRange = [-np.Inf, np.Inf]):
